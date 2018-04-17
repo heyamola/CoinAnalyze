@@ -20,7 +20,8 @@ def analyzePair(pairPath, step=5):
         else:
             allData = np.append(allData, data, axis=0)
 
-        returns = calculateReturns(data, CLOSE[0], step=step)
+        returns, begin, end = calculatePercentageChange(data[:, CLOSE[0]], step=step)
+        returns = returns[begin: returns.shape[0] - end]
         returns *= 100
         allReturns = np.append(allReturns, returns)
 

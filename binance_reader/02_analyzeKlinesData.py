@@ -11,7 +11,7 @@ if __name__ == '__main__':
     BASE_PATH = "klines_data"
 
     symbols = readFileNames(BASE_PATH)
-    symbols = ["BTCUSDT"]
+    # symbols = ["BTCUSDT"]
 
     for symbol in symbols:
         print "symbol: ", symbol
@@ -32,4 +32,4 @@ if __name__ == '__main__':
         print "len(corruptedLst): ", len(corruptedLst)
         print "len(data): ", len(filesLst)
         print "*" * 30
-        checkRows(os.path.join(symbol_path, corruptedLst[4]["filename"]), debug=True)
+        # checkRows(os.path.join(symbol_path, corruptedLst[4]["filename"]), debug=True)

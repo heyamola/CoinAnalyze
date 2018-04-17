@@ -30,12 +30,74 @@ BUY_BASE_VOLUME     = (9, "BUY_BASE_VOLUME")
 BUY_QUOTE_VOLUME    = (10, "BUY_QUOTE_VOLUME")
 
 
-def calculateReturns(data, index, step=1):
+ROW = 0
+COLUMN = 1
 
-    data1 = data[ :-step    , index]
-    data2 = data[step:      , index]
+def calculatePercentageChange(data, step=1):
+    '''
+    According to given step, it calculates percentage change
+    :param data: as a vector
+    :param step: according to (n + step) change is calculated
+    :return: it returns percentages change as a vector, begin offset, end offset
+    '''
 
-    ret = (data2 - data1) / data1
+    ret = np.copy(data)
+    data1 = ret[:-step]
+    data2 = ret[step:]
 
-    return ret
+    with np.errstate(divide='ignore', invalid='ignore'):
+        ret[: -step] = (data2 - data1) / data1
 
+    # mask nan values to 1
+    t = np.where(np.isnan(ret))
+    ret[t] = 1.
+
+    # mask inf value to 0
+    t = np.where(np.isinf(ret))
+    ret[t] = 0.
+
+    ret[ret < -500] = 500.
+    ret[ret > 500] = 500.
+
+    # if ret[ret < -2500].any():
+    #     raise Exception("Change calculation error! Min value exceeded")
+    # if ret[ret > 2500].any():
+    #     raise Exception("Change calculation error! Max value exceeded")
+
+    return ret, step, step
+
+
+def append_to_matrix(m, v, axis=COLUMN):
+    '''
+    if m(matrix) is none, then assing v(vector) to m
+    o.w according to given axis, append v to m
+    :param m: base matrix
+    :param v: given vector
+    :param axis: row base or column base append
+    '''
+
+    if type(m) == type(None):
+        return np.copy(v)
+
+    if axis == ROW:
+        if len(v.shape) == 1:
+            tmp_v = v.reshape(1, v.shape[0])
+        else:
+            tmp_v = v
+        return np.r_[m, tmp_v]
+    else:
+        return np.c_[m, v]
+
+def calculate_column_min_max(dataset, index):
+    _min, _max = dataset[:, index].min(), dataset[:, index].max()
+    if _min == _max:
+        raise Exception("Column min max values are equal!")
+    return _min, _max
+
+def normalize_column(dataset, index):
+    _min, _max = calculate_column_min_max(dataset, index)
+    dataset[:, index] = (dataset[:, index] - _min) / (_max - _min)
+
+def normalize_dataset(dataset):
+    for i in range(dataset.shape[1]):
+        normalize_column(dataset, i)

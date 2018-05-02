@@ -81,7 +81,7 @@ if __name__ == '__main__':
 
     symbols = []
     # symbols += getSymbolNames(cur2="usdt")
-    # symbols += getSymbolNames()
+    symbols += getSymbolNames()
     # symbols += getSymbolNames(cur2="usdt")
     # symbols += getSymbolNames(cur1="ltc")
     # symbols += getSymbolNames(cur2="ltc")
@@ -90,12 +90,11 @@ if __name__ == '__main__':
     # symbols += getSymbolNames(cur1="eth")
     # symbols += getSymbolNames(cur2="eth")
     # symbols = symbols
-    symbols = readFileNames("klines_data")
+    # symbols = readFileNames("klines_data")
     # symbols = list(set(symbols) - set(readFileNames("klines_data")))[20:]
     # symbols += readFileNames("klines_data")
 
     print "len(symbols)", len(symbols)
-
     threading.Thread(target=stopRunning).start()
 
     for i, symbol in enumerate(symbols):

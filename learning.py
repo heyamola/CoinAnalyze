@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import learningHelper as LH
-import indicators as IN
 import learingMeta as LM
 
 def rolling_window(a, window, step_size):
@@ -20,11 +19,13 @@ if __name__ == '__main__':
     filenames = readFileNames(os.path.join(BASE_PATH, symbol))
     raw_datasets = []
 
-    for filename in filenames[:1]:
+    for filename in filenames:
         # Reading raw dataset
         path = os.path.join(BASE_PATH, symbol, filename)
         print "path: ", path
         raw_data = np.genfromtxt(path, delimiter=";")
         raw_datasets.append(raw_data)
     meta = LM.prepareMeta()
-    LM.createDataFrame(raw_datasets, meta)
+
+    dataset, headerList = LM.createDataFrame(raw_datasets, meta)
+    LH.normalize_dataset(dataset)

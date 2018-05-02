@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import indicators
 import timeit
+import labelCreator as LC
 
 RAW = True
 CHANGE = True
@@ -40,6 +41,7 @@ META = {
     ]
 }
 
+
 def prepareMeta():
     meta = deepcopy(META)
     features = [OPEN, HIGH, LOW, CLOSE, VOLUME, NUMBER_OF_TRADE]
@@ -58,10 +60,9 @@ def prepareMeta():
                  "normalize_raw": -1, "normalize_change": -1}
             meta["indicators"].append(d)
 
-
     periods = [7, 14, 28, 58, 106]
     for period in periods:
-        name = "rsi_%s" % (period, )
+        name = "rsi_%s" % (period,)
         d = {"func": "rsi", "raw": RAW, "change": CHANGE, "name": name,
              "prices": [PRICES], "kwargs": {"period": period},
              "normalize_raw": -1, "normalize_change": -1}
@@ -86,6 +87,7 @@ def prepareMeta():
 
     return meta
 
+
 def getNormalizeInfoFromMeta(meta):
     retVal = []
     combinedList = []
@@ -98,6 +100,7 @@ def getNormalizeInfoFromMeta(meta):
         if item["change"]:
             retVal.append(item["normalize_change"])
     return retVal
+
 
 def _indicatorAppend(dataset, df, trim_indexes, indi_info):
     '''
@@ -138,6 +141,7 @@ def _indicatorAppend(dataset, df, trim_indexes, indi_info):
             trim_indexes.append((begin + begin_perc, end + end_perc))
             df["%s_perc" % name] = v_perc
 
+
 def _rawAppend(dataset, df, trim_indexes, raw_info):
     '''
         appends new columns to dataframe according to given raw_column info
@@ -160,32 +164,31 @@ def _rawAppend(dataset, df, trim_indexes, raw_info):
         trim_indexes.append((begin, end))
         df[perc_name] = v
 
+
 def createDataFrame(raw_datasets, meta):
     processedDatasets = []
     headerList = []
 
     print "createDataFrame --- len(raw_datasets): ", len(raw_datasets)
-
-    for dataset in raw_datasets:
+    start = timeit.default_timer()
+    for idx, dataset in enumerate(raw_datasets):
+        print "Dataset: %s/%s" % (idx + 1, len(raw_datasets))
         df = pd.DataFrame()
         trim_indexes = []
 
-        start = timeit.default_timer()
         for d in meta["raw_columns"]:
             _rawAppend(dataset, df, trim_indexes, d)
-        end = timeit.default_timer()
-        print "raw_columns elapsed: ", end - start
+        print "Raw Append done"
 
-        start = timeit.default_timer()
+        tmp_start = timeit.default_timer()
         for i, d in enumerate(meta["indicators"]):
-            print "%s/%s -- %s" % (i+1, len(meta["indicators"]), d["name"])
+            # print "%s/%s -- %s" % (i+1, len(meta["indicators"]), d["name"])
             _indicatorAppend(dataset, df, trim_indexes, d)
-        end = timeit.default_timer()
-        print "indicators elapsed: ", end - start
+        tmp_end = timeit.default_timer()
+        print "indicators done. elapsed: ", tmp_end - tmp_start
 
         begin_max = max(map(lambda x: x[0], trim_indexes))
         end_max = max(map(lambda x: x[1], trim_indexes))
-        print "begin_max: ", begin_max, " -- end_max: ", end_max
 
         values = df.values[begin_max: -end_max, :]
         processedDatasets.append(values)
@@ -193,7 +196,13 @@ def createDataFrame(raw_datasets, meta):
         if not headerList:
             headerList = list(df)
 
+    end = timeit.default_timer()
+    print "total processing time: ", end - start
 
-    normalize_dataset(dataset)
-    header_str = ','.join(headerList)
-    np.savetxt("test1.csv", values, delimiter=",", header=headers_str)
+    start = timeit.default_timer()
+    dataset = np.concatenate(processedDatasets, axis=0)
+    end = timeit.default_timer()
+    print "Concanation time: ", end - start
+    print "final dataset shape: ", dataset.shape
+
+    return dataset, headerList

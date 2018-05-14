@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import indicators
 import timeit
-import labelCreator as LC
+import labelCreator
 
 RAW = True
 CHANGE = True
@@ -38,7 +38,13 @@ META = {
         #     "normalize_raw": -1,
         #     "normalize_change": -1,
         # }
-    ]
+    ],
+    "label":
+        {
+            "func": "createLabelConstantIncrease",
+            "column": CLOSE[0],
+            "kwargs": {"step": 30, "class_points": [0.004]}
+        }
 }
 
 
@@ -165,11 +171,28 @@ def _rawAppend(dataset, df, trim_indexes, raw_info):
         df[perc_name] = v
 
 
-def createDataFrame(raw_datasets, meta):
-    processedDatasets = []
+def _createLabel(dataset, df, trim_indexes, label_info):
+    '''
+        {
+            "func": "createLabelConstantIncrease",
+            "column": CLOSE[0],
+            "kwargs": {"step": 30, "class_points": [-0.005, 0.005]}
+        }
+    '''
+    func_name = label_info["func"]
+    col = label_info["column"]
+    kwargs = label_info["kwargs"]
+
+    func = getattr(labelCreator, func_name)
+    labels, begin, end = func(dataset[:, col], **kwargs)
+    df["LABEL"] = labels
+    trim_indexes.append((begin, end))
+
+def createDataFrames(raw_datasets, meta):
+    dataFrames = []
     headerList = []
 
-    print "createDataFrame --- len(raw_datasets): ", len(raw_datasets)
+    print "createDataFrames --- len(raw_datasets): ", len(raw_datasets)
     start = timeit.default_timer()
     for idx, dataset in enumerate(raw_datasets):
         print "Dataset: %s/%s" % (idx + 1, len(raw_datasets))
@@ -181,17 +204,20 @@ def createDataFrame(raw_datasets, meta):
         print "Raw Append done"
 
         tmp_start = timeit.default_timer()
-        for i, d in enumerate(meta["indicators"]):
-            # print "%s/%s -- %s" % (i+1, len(meta["indicators"]), d["name"])
+        for d in meta["indicators"]:
             _indicatorAppend(dataset, df, trim_indexes, d)
         tmp_end = timeit.default_timer()
         print "indicators done. elapsed: ", tmp_end - tmp_start
+
+        print "Creating label..."
+        _createLabel(dataset, df, trim_indexes, meta["label"])
+        print "label creation done"
 
         begin_max = max(map(lambda x: x[0], trim_indexes))
         end_max = max(map(lambda x: x[1], trim_indexes))
 
         values = df.values[begin_max: -end_max, :]
-        processedDatasets.append(values)
+        dataFrames.append(values)
 
         if not headerList:
             headerList = list(df)
@@ -199,10 +225,4 @@ def createDataFrame(raw_datasets, meta):
     end = timeit.default_timer()
     print "total processing time: ", end - start
 
-    start = timeit.default_timer()
-    dataset = np.concatenate(processedDatasets, axis=0)
-    end = timeit.default_timer()
-    print "Concanation time: ", end - start
-    print "final dataset shape: ", dataset.shape
-
-    return dataset, headerList
+    return dataFrames, headerList

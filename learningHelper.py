@@ -1,4 +1,5 @@
 import numpy as np
+
 """
     [
                 [
@@ -17,21 +18,21 @@ import numpy as np
                 ]
             ]
     """
-OPEN_TIME           = (0, "OPEN_TIME")
-OPEN                = (1, "OPEN")
-HIGH                = (2, "HIGH")
-LOW                 = (3, "LOW")
-CLOSE               = (4, "CLOSE")
-VOLUME              = (5, "VOLUME")
-CLOSE_TIME          = (6, "CLOSE_TIME")
-QUOTE_VOLUME        = (7, "QUOTE_VOLUME")
-NUMBER_OF_TRADE     = (8, "NUMBER_OF_TRADE")
-BUY_BASE_VOLUME     = (9, "BUY_BASE_VOLUME")
-BUY_QUOTE_VOLUME    = (10, "BUY_QUOTE_VOLUME")
-
+OPEN_TIME = (0, "OPEN_TIME")
+OPEN = (1, "OPEN")
+HIGH = (2, "HIGH")
+LOW = (3, "LOW")
+CLOSE = (4, "CLOSE")
+VOLUME = (5, "VOLUME")
+CLOSE_TIME = (6, "CLOSE_TIME")
+QUOTE_VOLUME = (7, "QUOTE_VOLUME")
+NUMBER_OF_TRADE = (8, "NUMBER_OF_TRADE")
+BUY_BASE_VOLUME = (9, "BUY_BASE_VOLUME")
+BUY_QUOTE_VOLUME = (10, "BUY_QUOTE_VOLUME")
 
 ROW = 0
 COLUMN = 1
+
 
 def calculatePercentageChange(data, step=1):
     '''
@@ -64,7 +65,7 @@ def calculatePercentageChange(data, step=1):
     # if ret[ret > 2500].any():
     #     raise Exception("Change calculation error! Max value exceeded")
 
-    return ret, step, step
+    return ret, 0, step
 
 
 def append_to_matrix(m, v, axis=COLUMN):
@@ -88,16 +89,39 @@ def append_to_matrix(m, v, axis=COLUMN):
     else:
         return np.c_[m, v]
 
+
 def calculate_column_min_max(dataset, index):
     _min, _max = dataset[:, index].min(), dataset[:, index].max()
     if _min == _max:
         raise Exception("Column min max values are equal!")
     return _min, _max
 
+
 def normalize_column(dataset, index):
     _min, _max = calculate_column_min_max(dataset, index)
     dataset[:, index] = (dataset[:, index] - _min) / (_max - _min)
 
+
 def normalize_dataset(dataset):
     for i in range(dataset.shape[1]):
         normalize_column(dataset, i)
+
+def rolling_window(data, window):
+    '''
+    This function creates rolling windows for 2d array
+    :return:
+    '''
+    row_no, col_no = data.shape  # matrix shape
+
+    new_row_no, new_col_no = (row_no - window + 1, col_no * window)
+    retVal = np.zeros((new_row_no, new_col_no))
+
+    for i in range(window):
+        base = i * col_no
+        retVal[0, base: base + col_no] = data[i, :]
+
+    for i in range(1, new_row_no):
+        retVal[i, : -col_no] = retVal[i - 1, col_no:]
+        retVal[i, -col_no:] = data[window + i - 1, :]
+
+    return retVal

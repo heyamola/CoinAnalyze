@@ -1,5 +1,7 @@
 import numpy as np
 import learningHelper as LH
+import pandas as pd
+
 
 def createLabelConstantIncrease(prices, step=30, class_points=[-0.1, 0.1]):
     '''
@@ -14,9 +16,19 @@ def createLabelConstantIncrease(prices, step=30, class_points=[-0.1, 0.1]):
     :param diff: class range
     :return: it returns labels, begin trim, end trim
     '''
-    print "createLabelConstantIncrease"
     changes, begin, end = LH.calculatePercentageChange(prices, step)
-    print changes
+
+    # printing label info
+    # tmp = np.zeros_like(prices)
+    # tmp[:-step] = prices[step:]
+    #
+    # # df = pd.DataFrame()
+    # df["prices"] = prices
+    # df["prices_step"] = tmp
+    # df["changes"] = changes
+    #
+    # df.to_csv("check.csv")
+
     labels = np.zeros_like(changes)
     for i in range(len(changes)):
         label = 0
@@ -27,10 +39,21 @@ def createLabelConstantIncrease(prices, step=30, class_points=[-0.1, 0.1]):
                 break
         labels[i] = label
 
-    print "changes: "
-    print changes[:100]
-    print "labels: "
-    print labels[:100]
-    print np.unique(labels, return_counts=True)
+    u, c = np.unique(labels, return_counts=True)
+    print "createLabelConstantIncrease - unique labels: ", dict(zip(u, c))
+
+    return labels, begin, end
 
 
+def labelSplitter(labels):
+    '''
+    labels are enumerated as 0, 1...
+    this function binarizes labels by creating new columns
+    :param labels: labels as a numpy vector
+    :return: matrix as a binary label
+    '''
+    u = np.unique(labels)
+    m = np.zeros((len(labels), len(u)))
+    for i in range(len(labels)):
+        m[i, int(labels[i])] = 1
+    return m
